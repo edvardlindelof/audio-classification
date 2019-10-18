@@ -3,6 +3,7 @@ import oneshot_audio_data
 import torch
 from torch import nn, optim
 from torch.utils import data
+import numpy as np
 
 import argparse
 
@@ -10,6 +11,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--path', type=str, default='/home/edvard/SharedWithVirtualBox/genres')
 parser.add_argument('--epochs', type=int, default=100)
+parser.add_argument('--validate-every', type=int, default=20)
 
 
 class CNN1D(nn.Module):
@@ -53,19 +55,42 @@ class SiameseNet(nn.Module):
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    dataset = oneshot_audio_data.AudioDataset(args.path)
-    dataloader = data.DataLoader(dataset, batch_size=len(dataset), collate_fn=oneshot_audio_data.oneshot_collate_fn)
+    dataset_train = oneshot_audio_data.AudioDataset(args.path, n_per_class=3)
+    dataloader_train = data.DataLoader(
+        dataset_train, batch_size=len(dataset_train), collate_fn=oneshot_audio_data.oneshot_collate_fn
+    )
+    dataset_val = oneshot_audio_data.AudioDataset(args.path, n_per_class=10, n_skip=50)
+    dataloader_val = data.DataLoader(dataset_val, batch_size=len(dataset_val))
+
+    first_of_label = lambda l: next(s for s in iter(dataset_train) if s[1] == l)
+    firsts = [first_of_label(l) for l in range(10)]
+    # dictionary with label -> song, for use at evaluation time
+    # TODO consider different format
+    training_examples = {f[1]: torch.Tensor(f[0]) for f in firsts}
 
     net = SiameseNet()
     criterion = nn.BCEWithLogitsLoss()
-    optimizer = optim.Adam(net.parameters())
+    optimizer = optim.Adam(net.parameters(), lr=1e-4)
 
     for epoch in range(args.epochs):
-        sample_a, sample_b, same_class = next(iter(dataloader))
+        sample_a, sample_b, same_class = next(iter(dataloader_train))
         optimizer.zero_grad()
         output = net(sample_a, sample_b)
         loss = criterion(output, same_class)
         loss.backward()
         optimizer.step()
 
-        print('epochs of training: {}, loss of current epoch: {}'.format(epoch, loss))
+        if epoch % args.validate_every == 0:
+            with torch.no_grad():
+                # TODO gräv fram träningssamples för att leta grannar
+                # TODO modifiera dataloader_val för detta
+                sample, label = next(iter(dataloader_val))
+                output = [
+                    np.argmax([net(s_a.unsqueeze(0), s_b.unsqueeze(0)) for s_b in training_examples.values()])
+                    for s_a in sample
+                ]
+                accuracy = np.mean(np.array(output) == np.array(label))
+
+                print('epochs of training: {}, loss at current epoch: {}'.format(epoch, loss))
+                print('validation accuracy: {}'.format(accuracy))
+
