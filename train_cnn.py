@@ -17,7 +17,9 @@ parser.add_argument('--validate-every', type=int, default=20)
 class CNN1D(nn.Module):
     # TODO idea: might need some form of norm to be able to train well
     # TODO idea: use dilation in initial convs, I am thinking about the 5000 kernel size in block1 especially
-    # TODO idea: initialize weights with random walk
+    # TODO idea: initialize weights with random walk funkade inge vidare vid första försök
+    # TODO nästa steg: 1) kolla arkitekturer litteraturen som används för rå vågformsdata
+    # TODO nästa steg: 2) jämför med samtliga memorerade samples istället för bara ett
 
     def __init__(self):
         super(CNN1D, self).__init__()
@@ -26,6 +28,13 @@ class CNN1D(nn.Module):
         self.block3 = nn.Sequential(nn.Conv1d(25, 125, 10, 10), nn.ReLU())
         #self.block4 = nn.Sequential(nn.Conv1d(125, 625, 10, 10), nn.ReLU())
         self.linear = nn.Linear(125, 80)
+
+        for bl in [self.block1, self.block2, self.block3]:
+            conv = bl[0]
+            with torch.no_grad():
+                normal_numbers = torch.randn_like(conv.weight) / conv.kernel_size[0]
+                random_walk = torch.cumsum(normal_numbers, dim=2)
+                conv.weight.data = random_walk
 
     def forward(self, input):
         x0 = input.unsqueeze(1)
