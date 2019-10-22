@@ -1,4 +1,4 @@
-import oneshot_audio_data
+import audio_data
 
 import torch
 from torch import nn, optim
@@ -64,11 +64,11 @@ class SiameseNet(nn.Module):
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    dataset_train = oneshot_audio_data.AudioDataset(args.path, n_per_class=3)
+    dataset_train = audio_data.AudioDataset(args.path, n_per_class=3)
     dataloader_train = data.DataLoader(
-        dataset_train, batch_size=len(dataset_train), collate_fn=oneshot_audio_data.oneshot_collate_fn
+        dataset_train, batch_size=len(dataset_train), collate_fn=audio_data.oneshot_collate_fn
     )
-    dataset_val = oneshot_audio_data.AudioDataset(args.path, n_per_class=10, n_skip=50)
+    dataset_val = audio_data.AudioDataset(args.path, n_per_class=10, n_skip=50)
     dataloader_val = data.DataLoader(dataset_val, batch_size=len(dataset_val))
 
     first_of_label = lambda l: next(s for s in iter(dataset_train) if s[1] == l)
