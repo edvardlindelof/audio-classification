@@ -27,15 +27,13 @@ class CNN1D(nn.Module):
         self.block2 = nn.Sequential(nn.Conv1d(5, 25, 30, int(10 / (in_channels ** 0.5))), nn.ReLU())
         self.block3 = nn.Sequential(nn.Conv1d(25, 125, 10, 10), nn.ReLU())
         #self.block4 = nn.Sequential(nn.Conv1d(125, 625, 10, 10), nn.ReLU())
-        self.linear = nn.Linear(125, 80)
 
     def forward(self, input):
         x0 = input.view(input.size(0), -1, input.size(-1))
         x1 = self.block1(x0.float())  # TODO remove need to call float here
         x2 = self.block2(x1)
         x3 = self.block3(x2)
-        #x4 = self.block4(x3)
-        embedding = self.linear(x3.squeeze(-1))
+        embedding = x3.squeeze(-1)
         return embedding
 
 
@@ -44,11 +42,13 @@ class ClassificationCNN1D(nn.Module):
     def __init__(self, in_channels):
         super(ClassificationCNN1D, self).__init__()
         self.cnn = CNN1D(in_channels)
-        self.linear = nn.Linear(80, 10)
+        self.linear1 = nn.Linear(125, 80)
+        self.linear2 = nn.Linear(80, 10)
 
     def forward(self, input):
         embedding = torch.selu(self.cnn(input))
-        pred_logits = self.linear(embedding)
+        embedding = torch.selu(self.linear1(embedding))
+        pred_logits = self.linear2(embedding)
         return pred_logits
 
 
