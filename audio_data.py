@@ -11,7 +11,7 @@ import audio_loading
 class AudioDataset(data.Dataset):
 
     # n_skip will be used to load a test set
-    def __init__(self, path, n_per_class=3, n_skip=0, mfcc=False):
+    def __init__(self, path, n_per_class=3, n_skip=0, mfcc=False, downsample=False):
         super(AudioDataset, self).__init__()
         self.classnames = [n for n in os.listdir(path) if not n.endswith('.mf')]
 
@@ -20,9 +20,12 @@ class AudioDataset(data.Dataset):
         for label, classname in enumerate(self.classnames):
             for songname in os.listdir(path + '/' + classname)[n_skip:n_skip+n_per_class]:
                 songpath = path + '/' + classname + '/' + songname
-                rate, song = audio_loading.load_reduced_wav(songpath)
+                if downsample:
+                    rate, song = audio_loading.load_reduced_wav(songpath)
+                else:
+                    rate, song = audio_loading.load_wav(songpath)
                 if mfcc:
-                    song = python_speech_features.mfcc(song, rate).transpose()
+                    song = python_speech_features.mfcc(song, rate, nfft=551).transpose()
                 songs.append(song)
                 labels.append(label)
 

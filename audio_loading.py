@@ -9,13 +9,21 @@ DOWN_SAMPLING_FACTOR = 5
 
 INT16_MAX = 2.0 ** (16 - 1) + 1
 
+def _slice_and_rescale(wav, rate):
+    return (wav[START_POINT * rate:(START_POINT + SECONDS) * rate] / INT16_MAX).astype(np.float)
+
 def load_reduced_wav(path):
     rate, wav = wavfile.read(path)  # loads as int16
     # take first SECONDS and convert to [-1.0, 1.0]
-    wav = (wav[START_POINT*rate:(START_POINT+SECONDS)*rate] / INT16_MAX).astype(np.float)
+    wav = _slice_and_rescale(wav, rate)
     wav_downsampled = samplerate.resample(wav, 1 / DOWN_SAMPLING_FACTOR)
     rate = rate / DOWN_SAMPLING_FACTOR
     return rate, wav_downsampled
+
+def load_wav(path):
+    rate, wav = wavfile.read(path)  # loads as int16
+    wav = _slice_and_rescale(wav, rate)
+    return rate, wav
 
 
 if __name__ == '__main__':
