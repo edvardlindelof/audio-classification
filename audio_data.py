@@ -5,7 +5,7 @@ import python_speech_features
 
 import os
 
-import reduce_samplerate
+import audio_loading
 
 
 class AudioDataset(data.Dataset):
@@ -20,7 +20,7 @@ class AudioDataset(data.Dataset):
         for label, classname in enumerate(self.classnames):
             for songname in os.listdir(path + '/' + classname)[n_skip:n_skip+n_per_class]:
                 songpath = path + '/' + classname + '/' + songname
-                rate, song = reduce_samplerate.load_reduced_wav(songpath)
+                rate, song = audio_loading.load_reduced_wav(songpath)
                 if mfcc:
                     song = python_speech_features.mfcc(song, rate).transpose()
                 songs.append(song)
