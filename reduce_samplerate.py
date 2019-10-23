@@ -14,7 +14,8 @@ def load_reduced_wav(path):
     # take first SECONDS and convert to [-1.0, 1.0]
     wav = (wav[START_POINT*rate:(START_POINT+SECONDS)*rate] / INT16_MAX).astype(np.float)
     wav_downsampled = samplerate.resample(wav, 1 / DOWN_SAMPLING_FACTOR)
-    return wav_downsampled
+    rate = rate / DOWN_SAMPLING_FACTOR
+    return rate, wav_downsampled
 
 
 if __name__ == '__main__':
